@@ -7,7 +7,6 @@ from secrets import randbits
 import logging
 import verboselogs
 
-
 __author__ = "Jason Kendall VE3YCA"
 __copyright__ = "Copyright 2020-2021, Jason Kendall"
 __credits__ = ["Jason Kendall"]

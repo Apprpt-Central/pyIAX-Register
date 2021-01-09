@@ -32,10 +32,10 @@ class registerHandler(register):
         if md5(challenge.encode('utf-8') + password.encode('ascii')).hexdigest().lower() == secret.lower():
             self.DateTime = ""          # https://tools.ietf.org/html/rfc5456#section-8.6.28
             self.ApparentAddress = ""   # https://tools.ietf.org/html/rfc5456#section-8.6.17
-            logger.info(f"Authentication Success")
+            logger.success(f"Authentication Success")
             return True
 
-        logging.debug("Authentication Failed")
+        logging.warning("Authentication Failed")
         self.CauseCode = 0x0d
         self.Cause = "User/Password Incorrect"
         return False

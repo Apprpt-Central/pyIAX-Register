@@ -3,10 +3,11 @@
 from iax2.packet import iax2
 from register.dummy import dummy as register
 from verboselogs import VerboseLogger as getLogger
+import logging
 import socketserver
 import threading
 import time
-import coloredlogs
+import argparse
 
 
 __author__ = "Jason Kendall VE3YCA"
@@ -20,7 +21,6 @@ __status__ = "Dev"
 
 
 logger = getLogger('pyIAX-Regserver')
-coloredlogs.install(level='DEBUG')
 
 
 class pyIAX(socketserver.BaseRequestHandler):
@@ -41,16 +41,38 @@ class ThreadedUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
 
 
 if __name__ == "__main__":
-    HOST, PORT = "0.0.0.0", 4569
+    parser = argparse.ArgumentParser(description='IAX2 Registration Server')
+    parser.add_argument('--listen_ip', dest='HOST', metavar='IP', help='The IP to listen on - default: 0.0.0.0', default='0.0.0.0')
+    parser.add_argument('--port', dest='PORT', metavar='PORT', type=int, help='The UDP Port to listen on - default: 4569', default=4569)
+    parser.add_argument('-v', dest='VERBOSE', action='count', help='Verbose Logs (More is more verbose)', default=0)
+    parser.add_argument('-c', dest='COLOR', action='store_true', help='Display Colored logs - default False')
 
-    server = ThreadedUDPServer((HOST, PORT), pyIAX)
+    args = parser.parse_args()
+
+    # Configure logger for requested verbosity.
+    if args.VERBOSE >= 3:
+        logging_level = "DEBUG"
+    elif args.VERBOSE >= 2:
+        logging_level = "VERBOSE"
+    elif args.VERBOSE >= 1:
+        logging_level = "NOTICE"
+    elif args.VERBOSE <= 0:
+        logging_level = "WARNING"
+
+    if args.COLOR:
+        import coloredlogs
+        coloredlogs.install(level=logging_level)
+    else:
+        logging.basicConfig(level=logging_level)
+
+    server = ThreadedUDPServer((args.HOST, args.PORT), pyIAX)
 
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.daemon = True
 
     try:
         server_thread.start()
-        print("Server started at {} port {}".format(HOST, PORT))
+        logger.success("Server started at {} port {}".format(args.HOST, args.PORT))
         while True:
             time.sleep(100)
     except (KeyboardInterrupt, SystemExit):
