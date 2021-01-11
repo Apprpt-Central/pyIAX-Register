@@ -47,7 +47,7 @@ INFO_ELEMENT = {
     0x13: ("Refresh", "H"),
     0x16: ("Cause", "c"),
     0x18: ("MessageCount", "BB"),
-    0x1f: ("DateTime", "L"),
+    0x1f: ("DateTime", "I"),
     0x2a: ("CauseCode", "B"),
     0x36: ("CallToken", "c"),
     0x42: ("Version", "c"),
