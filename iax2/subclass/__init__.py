@@ -43,7 +43,7 @@ INFO_ELEMENT = {
     0x0f: ("Challenge", "c"),
     0x10: ("ChallengeResponseMD5", "c"),
     0x11: ("ChallengeResponseRSA", "c"),
-    0x12: ("ApparentAddress", "c"),
+    0x12: ("ApparentAddress", "*"), # * Is a special case that just appends pre-packed data
     0x13: ("Refresh", "H"),
     0x16: ("Cause", "c"),
     0x18: ("MessageCount", "BB"),
@@ -111,6 +111,9 @@ class baseclass():
             if data is not None:
                 if dataFormat[1] == 'c':
                     result.append(pack(f"!BB{len(data)}c", format[0], len(data), *[data[i].encode('utf-8') for i in range(0, len(data))]))
+                elif dataFormat[1] == '*':
+                    result.append(pack(f"!BB", format[0], len(data)))
+                    result.append(data)
                 else:
                     result.append(pack(f"!BB{dataFormat[1]}", format[0], calcsize(dataFormat[1]), data))
         self.response = b"".join(result)

@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+from ipaddress import ip_address, IPv4Address, IPv6Address
+from struct import pack
 
 class IEDateTime:
     """
@@ -23,3 +25,16 @@ class IEDateTime:
         result = result | ((TS.month) & 0x0f) << 21
         result = result | ((TS.year - 2000) & 0x7f) << 25
         self.result = result
+
+class IEApparentAddr:
+
+    def __init__(self, address, port):
+        ip = ip_address(address)
+        if isinstance(ip, IPv4Address):
+            self.result = pack("!HH4sxxxxxxxx", 0x0200, port, ip.packed)
+        elif isinstance(ip, IPv6Address):
+#            self.result = pack("!HH4s16s4s", 0x0A00, port, "FlowInfo", ip.packed, "ScopeID")
+            raise
+        else:
+            raise
+
