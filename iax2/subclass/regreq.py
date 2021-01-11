@@ -41,7 +41,7 @@ class regreq(baseclass):
                 None, host, port
             )
             if auth:
-                self.call.set_entry('RegRefresh', self.register.RegRefresh)
+                self.call.set_entry('RegRefresh', self.register.get_refresh())
                 self.response = regack
             else:
                 self.call.set_entry('Cause',  self.register.Cause)

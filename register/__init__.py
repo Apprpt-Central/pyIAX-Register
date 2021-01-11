@@ -1,3 +1,5 @@
+from random import randint
+
 __author__ = "Jason Kendall VE3YCA"
 __copyright__ = "Copyright 2020-2021, Jason Kendall"
 __credits__ = ["Jason Kendall"]
@@ -12,3 +14,7 @@ class register():
     CauseCode = 0x01
     Cause = "Error"
     RegRefresh = 120
+    RegRefreshSize = 10
+
+    def get_refresh(self):
+        return randint(self.RegRefresh - self.RegRefreshSize, self.RegRefresh + self.RegRefreshSize)
