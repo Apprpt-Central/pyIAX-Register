@@ -19,7 +19,7 @@ class regack(baseclass):
 
     format = (
         (0x06, True, ""),    # Username
-        (0x1f, True, ""),    # DateTime
+        (0x1f, True, 0),    # DateTime
         (0x12, True, ""),    # Apparent Address
         (0x18, False, ""),   # Message Count
         (0x02, False, ""),   # Calling Number
@@ -37,7 +37,7 @@ class regack(baseclass):
     def generate(self):
         data = {}
         data[0x06] = self.call.get_entry('UserName')
-        data[0x1f] = ""
+        data[0x1f] = 0
         data[0x12] = ""
         data[0x13] = self.call.get_entry('RegRefresh')
         super().generate(data)
