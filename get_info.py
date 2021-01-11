@@ -16,10 +16,9 @@ __status__ = "Dev"
 dest = randbits(14)
 source = 1 << 15
 
-dataClass = info()
+dataClass = info(initial=True)
 
 header = pack("!HHLBBB", source, dest, 10, 0, 0, frameTypes.IAX.value)
-data = dataClass.generate(True)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.settimeout(1)

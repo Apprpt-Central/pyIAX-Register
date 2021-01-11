@@ -27,6 +27,7 @@ current_milli_time = lambda: int(round(time.time() * 1000))
 
 class iax2():
     calls = TTLCache(512, 120)
+    nodes = TTLCache(10000, 120)
 
     def __init__(self, register):
         logger.info("Init IAX2")
@@ -34,16 +35,17 @@ class iax2():
 
     def parse_packet(self, data, host):
         logger.debug(f"received {data} from {host}")
-        packet = iax2Packet(data, host, self.register, self.calls)
+        packet = iax2Packet(data, host, self.register, self.calls, self.nodes)
         if packet.responseClass:
             # Since we have a responseClass, sending which ever response we're going to send
             return packet.build_response()
 
 class iax2Packet():
-    def __init__(self, data, host, register, calls):
+    def __init__(self, data, host, register, calls, nodes):
         start_time = current_milli_time()
         self.register = register
         self.calls = calls
+        self.nodes = nodes
 
         # F, Source Call Number -- 1, 15 Bits (16 Bits)
         # R, Destination Call Number -- 1, 15 Bits (16 Bits)
@@ -87,14 +89,14 @@ class iax2Packet():
         if self.frame == 0x06:  # IAX Frame Type
             # TODO: Probably wrap this in a Try for any packet types we don't support
             module = __import__(f"iax2.subclass.{SUBCLASS[sub]}", fromlist=[''])
-            parserResponse = getattr(module, SUBCLASS[sub])(data[length:], register=self.register.get_handler(), calls=self.call)
+            parserResponse = getattr(module, SUBCLASS[sub])(data[length:], register=self.register.get_handler(), calls=self.call, nodes=self.nodes)
 
             # Get what ever response the parser has set, this is a reference to the class of the response
             self.responseClass = parserResponse.get_response()
         return None
 
     def build_response(self):
-        response = self.responseClass(calls=self.call)
+        response = self.responseClass(calls=self.call, nodes=self.nodes)
         if self.dest == 0:
             self.dest = randbits(14)
         fsource = response.fType << 15 | self.dest

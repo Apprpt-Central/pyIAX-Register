@@ -64,6 +64,9 @@ class baseclass():
     call = None
 
     def __init__(self, data=None, **kwargs):
+        if 'nodes' in kwargs:
+            self.nodes = kwargs['nodes']
+
         if 'calls' in kwargs:
             self.call = kwargs['calls']
 
@@ -105,7 +108,7 @@ class baseclass():
                 data = None
 
             # If we have data to add, add it
-            if data:
+            if data is not None:
                 if dataFormat[1] == 'c':
                     result.append(pack(f"!BB{len(data)}c", format[0], len(data), *[data[i].encode('utf-8') for i in range(0, len(data))]))
                 else:

@@ -2,7 +2,7 @@ from iax2.subclass import baseclass
 from iax2.subclass.regauth import regauth
 from iax2.subclass.regack import regack
 from iax2.subclass.regrej import regrej
-
+import time
 
 __author__ = "Jason Kendall VE3YCA"
 __copyright__ = "Copyright 2020-2021, Jason Kendall"
@@ -42,6 +42,7 @@ class regreq(baseclass):
             )
             if auth:
                 self.call.set_entry('RegRefresh', self.register.get_refresh())
+                self.nodes[self.parsedData['UserName']] = time.time()
                 self.response = regack
             else:
                 self.call.set_entry('Cause',  self.register.Cause)

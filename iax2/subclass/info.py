@@ -22,6 +22,13 @@ class info(baseclass):
     )
 
     def __init__(self, data=None, **kwargs):
+        if 'call_count' in kwargs:
+            self.call_count = kwargs['call_count']
+
+        if 'initial' in kwargs:
+            self.initial = kwargs['initial']
+        else:
+            self.initial = False
         super().__init__(data, **kwargs)
 
     def parse(self, data):
@@ -29,8 +36,8 @@ class info(baseclass):
         super().parse(data)
         self.response = info
 
-    def generate(self, initial=False):
+    def generate(self):
         data = {}
-        if not initial:
-            data[0x43] = 10
+        if not self.initial:
+            data[0x43] = self.nodes.currsize
         super().generate(data)
