@@ -9,10 +9,9 @@ __status__ = "Dev"
 
 
 class call:
-    cache = {}
-
     def __init__(self, ID):
         self.id = ID
+        self.cache = {}
 
     def set_entry(self, key, value):
         self.cache[key] = value
