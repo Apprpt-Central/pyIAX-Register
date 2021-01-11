@@ -33,11 +33,12 @@ class regreq(baseclass):
 
             # We have a ChallengeResponse, try and auth
             # user, challenge, secret, method, host, port
+            host, port = self.call.get_entry('host')
             auth = self.register.verify(
                 self.parsedData['UserName'],
                 challengeSecret,
                 challengeResponse,
-                None, None, None
+                None, host, port
             )
             if auth:
                 self.call.set_entry('RegRefresh', self.register.RegRefresh)

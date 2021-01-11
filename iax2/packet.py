@@ -80,6 +80,7 @@ class iax2Packet():
 
         self.call = self.get_call(self.source)
         if not self.call.get_entry("start_time"):
+            self.call.set_entry("host", host)
             self.call.set_entry("start_time", start_time)
 
         # Find and load the correct packet parser
