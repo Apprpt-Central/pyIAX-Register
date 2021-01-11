@@ -41,7 +41,9 @@ class regreq(baseclass):
                 None, host, port
             )
             if auth:
-                self.call.set_entry('RegRefresh', self.register.get_refresh())
+                self.call.set_entry('RegRefresh', self.register.Refresh)
+                self.call.set_entry('IEDateTime', self.register.IEDateTime)
+                self.call.set_entry('IEApparentAddr', self.register.IEApparentAddr)
                 self.nodes[self.parsedData['UserName']] = time.time()
                 self.response = regack
             else:

@@ -1,6 +1,5 @@
 from iax2.subclass import baseclass
 from iax2.subclass import frameTypes
-from iax2.helpers import IEDateTime, IEApparentAddr
 
 __author__ = "Jason Kendall VE3YCA"
 __copyright__ = "Copyright 2020-2021, Jason Kendall"
@@ -36,11 +35,9 @@ class regack(baseclass):
 
     def generate(self):
         host, port = self.call.get_entry('host')
-        TS = IEDateTime()
-        IP = IEApparentAddr(host, port)
         data = {}
         data[0x06] = self.call.get_entry('UserName')
-        data[0x1f] = TS.result
-        data[0x12] = IP.result
+        data[0x1f] = self.call.get_entry('IEDateTime')
+        data[0x12] = self.call.get_entry('IEApparentAddr')
         data[0x13] = self.call.get_entry('RegRefresh')
         super().generate(data)

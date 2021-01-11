@@ -26,12 +26,15 @@ class dummy():
 
 # Handlers are initialized at time of use,
 class registerHandler(register):
+    def __init__(self):
+        super().__init__()
+
     # hashed === md5(challenge+plaintext) -> success
     def verify(self, user, challenge, secret, method, host, port):
+        self.host = host
+        self.port = port
         password = "password"
         if md5(challenge.encode('utf-8') + password.encode('ascii')).hexdigest().lower() == secret.lower():
-            self.DateTime = ""          # https://tools.ietf.org/html/rfc5456#section-8.6.28
-            self.ApparentAddress = ""   # https://tools.ietf.org/html/rfc5456#section-8.6.17
             logger.success(f"Authentication Success from {host}:{port} for user {user}")
             return True
 
