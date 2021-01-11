@@ -44,7 +44,12 @@ class regreq(baseclass):
                 self.call.set_entry('RegRefresh', self.register.Refresh)
                 self.call.set_entry('IEDateTime', self.register.IEDateTime)
                 self.call.set_entry('IEApparentAddr', self.register.IEApparentAddr)
-                self.nodes[self.parsedData['UserName']] = time.time()
+                self.nodes[self.parsedData['UserName']] = {
+                    "Time": time.time(),
+                    "username": self.parsedData['UserName'],
+                    "ip": self.register.host,
+                    "port": self.register.port,
+                }
                 self.response = regack
             else:
                 self.call.set_entry('Cause',  self.register.Cause)
