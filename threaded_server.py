@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 from iax2.packet import iax2
-from register.dummy import dummy as register
+from register.flatfile import flatfile as register
+# from register.dummy import dummy as register
 from verboselogs import VerboseLogger as getLogger
 import logging
 import socketserver
