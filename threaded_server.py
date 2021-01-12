@@ -8,7 +8,7 @@ import logging
 import socketserver
 import threading
 import time
-import argparse
+import configargparse
 
 
 __author__ = "Jason Kendall VE3YCA"
@@ -42,7 +42,7 @@ class ThreadedUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='IAX2 Registration Server')
+    parser = configargparse.ArgParser(default_config_files=['/etc/pyiax-reg/*.conf', 'pyiax-reg.conf'], description='IAX2 Registration Server')
     parser.add_argument('--listen_ip', dest='HOST', metavar='IP', help='The IP to listen on - default: 0.0.0.0', default='0.0.0.0')
     parser.add_argument('--port', dest='PORT', metavar='PORT', type=int, help='The UDP Port to listen on - default: 4569', default=4569)
     parser.add_argument('-v', dest='VERBOSE', action='count', help='Verbose Logs (More is more verbose)', default=0)
