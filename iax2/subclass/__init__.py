@@ -43,7 +43,7 @@ INFO_ELEMENT = {
     0x0f: ("Challenge", "c"),
     0x10: ("ChallengeResponseMD5", "c"),
     0x11: ("ChallengeResponseRSA", "c"),
-    0x12: ("ApparentAddress", "*"), # * Is a special case that just appends pre-packed data
+    0x12: ("ApparentAddress", "*"),   # * Is a special case that just appends pre-packed data
     0x13: ("Refresh", "H"),
     0x16: ("Cause", "c"),
     0x18: ("MessageCount", "BB"),

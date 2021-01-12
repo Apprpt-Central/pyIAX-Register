@@ -23,7 +23,7 @@ header = pack("!HHLBBB", source, dest, 10, 0, 0, frameTypes.IAX.value)
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.settimeout(1)
 
-s.sendto(header+dataClass.get_response(), ('127.0.0.1', 4569))
+s.sendto(header + dataClass.get_response(), ('127.0.0.1', 4569))
 
 try:
     rec_data, addr = s.recvfrom(2048)

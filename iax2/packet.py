@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 # Source: https://stackoverflow.com/a/5998359
-current_milli_time = lambda: int(round(time.time() * 1000))
+def current_milli_time():
+    return int(round(time.time() * 1000))
 
 
 class iax2():
@@ -39,6 +40,7 @@ class iax2():
         if packet.responseClass:
             # Since we have a responseClass, sending which ever response we're going to send
             return packet.build_response()
+
 
 class iax2Packet():
     def __init__(self, data, host, register, calls, nodes):

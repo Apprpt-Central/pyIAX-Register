@@ -27,7 +27,7 @@ class register():
 
     @property
     def IEDateTime(self):
-        if self._iedatetime == None:
+        if self._iedatetime is None:
             self._iedatetime = IEDateTime()
         return self._iedatetime.result
 
@@ -37,7 +37,7 @@ class register():
 
     @property
     def IEApparentAddr(self):
-        if self._ieapparentaddr == None:
+        if self._ieapparentaddr is None:
             self._ieapparentaddr = IEApparentAddr(self.host, self.port)
         return self._ieapparentaddr.result
 
