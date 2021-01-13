@@ -1,5 +1,6 @@
 from hashlib import md5
-from register import register
+from register import register, baseRegister
+from os import path
 import logging
 import verboselogs
 import csv
@@ -19,9 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 # Initializer, add any connections you need here as they initialize at startup
-class flatfile():
-    def __init__(self):
-        with open('useraccess.csv', mode='r') as infile:
+class flatfile(baseRegister):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not path.exists(self.args.REGISTER_USERFILE):
+            logger.error(f"User file {self.args.REGISTER_USERFILE} does not exist!")
+            exit()
+        with open(self.args.REGISTER_USERFILE, mode='r') as infile:
             accounts = csv.reader(infile)
             self.accounts = dict((rows[0], rows[1]) for rows in accounts)
 
@@ -31,8 +36,8 @@ class flatfile():
 
 # Handlers are initialized at time of use,
 class registerHandler(register):
-    def __init__(self, accounts):
-        super().__init__()
+    def __init__(self, accounts, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.accounts = accounts
 
     # hashed === md5(challenge+plaintext) -> success
@@ -49,3 +54,8 @@ class registerHandler(register):
         self.CauseCode = 0x0d
         self.Cause = f"User/Password Incorrect from {host}:{port} for user {user}"
         return False
+
+
+def help(parser):
+    group = parser.add_argument_group('Flatfile Registration Module')
+    group.add_argument('--file', dest="REGISTER_USERFILE", default='useraccess.csv', help='The file used for registration (Default: useraccess.csv)')

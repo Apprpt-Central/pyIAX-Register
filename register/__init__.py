@@ -1,5 +1,7 @@
 from random import randint
 from iax2.helpers import IEDateTime, IEApparentAddr
+from os.path import dirname, basename, isfile, join
+import glob
 
 __author__ = "Jason Kendall VE3YCA"
 __copyright__ = "Copyright 2020-2021, Jason Kendall"
@@ -10,6 +12,15 @@ __maintainer__ = "Jason Kendall"
 __email__ = "ve3yca@ve3yca.com"
 __status__ = "Dev"
 
+# source: https://stackoverflow.com/q/58082592
+modules = glob.glob(join(dirname(__file__), "*.py"))
+__all__ = [basename(f)[:-3] for f in modules if isfile(f) and not f.endswith('__init__.py')]
+
+
+class baseRegister():
+    def __init__(self, *args, **kwargs):
+        self.args = kwargs['args']
+
 
 class register():
     CauseCode = 0x01
@@ -17,7 +28,9 @@ class register():
     RegRefresh = 120
     RegRefreshSize = 10
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        if 'args' in kwargs:
+            self.args = kwargs['args']
         self._iedatetime = None
         self._ieapparentaddr = None
 

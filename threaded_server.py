@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 from iax2.packet import iax2
-from register.flatfile import flatfile as register
-# from register.dummy import dummy as register
 from verboselogs import VerboseLogger as getLogger
+import importlib
 import logging
 import socketserver
 import threading
 import time
 import configargparse
+import register
 
 
 __author__ = "Jason Kendall VE3YCA"
@@ -36,19 +36,37 @@ class pyIAX(socketserver.BaseRequestHandler):
 
 class ThreadedUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
     def __init__(self, *args, **kwargs):
-        socketserver.UDPServer.__init__(self, *args, **kwargs)
-        self.register = register()
+
+        self.register = kwargs.pop('register')
+        self.args = kwargs.pop('args')
+
         self.iax2 = iax2(self.register)
+        socketserver.UDPServer.__init__(self, *args, **kwargs)
 
 
 if __name__ == "__main__":
-    parser = configargparse.ArgParser(default_config_files=['/etc/pyiax-reg/*.conf', 'pyiax-reg.conf'], description='IAX2 Registration Server')
+    parser = configargparse.ArgParser(
+        default_config_files=['/etc/pyiax-reg/*.conf', './pyiax-reg.conf'],
+        description='IAX2 Registration Server',
+        add_help=False
+    )
+    parser.add_argument('-h', dest='HELP', action='store_true', help='show this help message and exit')
     parser.add_argument('--listen_ip', dest='HOST', metavar='IP', help='The IP to listen on - default: 0.0.0.0', default='0.0.0.0')
     parser.add_argument('--port', dest='PORT', metavar='PORT', type=int, help='The UDP Port to listen on - default: 4569', default=4569)
     parser.add_argument('-v', dest='VERBOSE', action='count', help='Verbose Logs (More is more verbose)', default=0)
     parser.add_argument('-c', dest='COLOR', action='store_true', help='Display Colored logs - default False')
+    parser.add_argument('--register', dest="REGISTER", choices=register.__all__, help='Select the registration module to use')
 
-    args = parser.parse_args()
+    args, argv = parser.parse_known_args()
+
+    if args.HELP:
+        for moduleName in register.__all__:
+            module = importlib.import_module(f"register.{moduleName}")
+            if "help" in dir(module):
+                module.help(parser)
+        parser.parse_known_args()
+        parser.print_help()
+        exit()
 
     # Configure logger for requested verbosity.
     if args.VERBOSE >= 3:
@@ -66,7 +84,13 @@ if __name__ == "__main__":
     else:
         logging.basicConfig(level=logging_level)
 
-    server = ThreadedUDPServer((args.HOST, args.PORT), pyIAX)
+    registerMod = importlib.import_module(f"register.{args.REGISTER}")
+    if "help" in dir(registerMod):
+        registerMod.help(parser)
+        args, argv = parser.parse_known_args()
+    registerHandler = getattr(registerMod, args.REGISTER)(args=args)
+
+    server = ThreadedUDPServer((args.HOST, args.PORT), pyIAX, register=registerHandler, args=args)
 
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.daemon = True
