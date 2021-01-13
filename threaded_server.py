@@ -55,7 +55,7 @@ if __name__ == "__main__":
     parser.add_argument('--port', dest='PORT', metavar='PORT', type=int, help='The UDP Port to listen on - default: 4569', default=4569)
     parser.add_argument('-v', dest='VERBOSE', action='count', help='Verbose Logs (More is more verbose)', default=0)
     parser.add_argument('-c', dest='COLOR', action='store_true', help='Display Colored logs - default False')
-    parser.add_argument('--register', dest="REGISTER", choices=register.__all__, required=True, help='Select the registration module to use')
+    parser.add_argument('--register', dest="REGISTER", choices=register.__all__, help='Select the registration module to use')
 
     args, argv = parser.parse_known_args()
 
@@ -66,6 +66,10 @@ if __name__ == "__main__":
                 module.help(parser)
         parser.parse_known_args()
         parser.print_help()
+        exit()
+
+    if args.REGISTER is None:
+        print("Register Argument is not optional")
         exit()
 
     # Configure logger for requested verbosity.
