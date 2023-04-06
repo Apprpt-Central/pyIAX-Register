@@ -1,4 +1,4 @@
-FROM python:3.7.5-slim-buster
+FROM python:3.10.10-slim-buster
 
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt --no-cache-dir
