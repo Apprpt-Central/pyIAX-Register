@@ -64,14 +64,14 @@ class baseclass():
     call = None
 
     def __init__(self, data=None, **kwargs):
-        if 'nodes' in kwargs:
-            self.nodes = kwargs['nodes']
+        if 'parent' in kwargs:
+            self.parent = kwargs['parent']
+            self.nodes = kwargs['parent'].nodes
+            self.register = kwargs['parent'].register.get_handler()
+            self.notify = kwargs['parent'].notify
 
         if 'calls' in kwargs:
             self.call = kwargs['calls']
-
-        if 'register' in kwargs:
-            self.register = kwargs['register']
 
         if data is None:
             self.generate()

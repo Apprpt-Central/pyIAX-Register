@@ -9,7 +9,7 @@ import threading
 import time
 import configargparse
 import register
-
+import notify
 
 __author__ = "Jason Kendall VE3YCA"
 __copyright__ = "Copyright 2020-2021, Jason Kendall"
@@ -38,11 +38,11 @@ class ThreadedUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
     def __init__(self, *args, **kwargs):
 
         self.register = kwargs.pop('register')
+        self.notify = kwargs.pop('notify')
         self.args = kwargs.pop('args')
 
-        self.iax2 = iax2(self.register)
+        self.iax2 = iax2(self.register, self.notify)
         socketserver.UDPServer.__init__(self, *args, **kwargs)
-
 
 if __name__ == "__main__":
     parser = configargparse.ArgParser(
@@ -56,6 +56,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', dest='VERBOSE', action='count', help='Verbose Logs (More is more verbose)', default=0)
     parser.add_argument('-c', dest='COLOR', action='store_true', help='Display Colored logs - default False')
     parser.add_argument('--register', dest="REGISTER", choices=register.__all__, help='Select the registration module to use')
+    parser.add_argument('--notify', dest="NOTIFY", choices=notify.__all__, help='Select the noitification module to use')
 
     args, argv = parser.parse_known_args()
 
@@ -64,6 +65,11 @@ if __name__ == "__main__":
             module = importlib.import_module(f"register.{moduleName}")
             if "help" in dir(module):
                 module.help(parser)
+        for moduleName in notify.__all__:
+            module = importlib.import_module(f"notify.{moduleName}")
+            if "help" in dir(module):
+                module.help(parser)
+
         parser.parse_known_args()
         parser.print_help()
         exit()
@@ -94,7 +100,16 @@ if __name__ == "__main__":
         args, argv = parser.parse_known_args()
     registerHandler = getattr(registerMod, args.REGISTER)(args=args)
 
-    server = ThreadedUDPServer((args.HOST, args.PORT), pyIAX, register=registerHandler, args=args)
+    if args.NOTIFY:
+        notifyMod = importlib.import_module(f"notify.{args.NOTIFY}")
+        if "help" in dir(notifyMod):
+            notifyMod.help(parser)
+            args, argv = parser.parse_known_args()
+        notifyHandler = getattr(notifyMod, args.NOTIFY)(args=args)
+    else:
+        notifyHandler = None
+
+    server = ThreadedUDPServer((args.HOST, args.PORT), pyIAX, register=registerHandler, notify=notifyHandler, args=args)
 
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.daemon = True

@@ -51,6 +51,8 @@ class regreq(baseclass):
                     "port": self.register.port,
                 }
                 self.response = regack
+                if self.notify:
+                    self.notify.get_handler().notify()
             else:
                 self.call.set_entry('Cause', self.register.Cause)
                 self.call.set_entry('CauseCode', self.register.CauseCode)

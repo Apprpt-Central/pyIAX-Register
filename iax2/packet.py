@@ -30,24 +30,23 @@ class iax2():
     calls = TTLCache(512, 120)
     nodes = TTLCache(10000, 120)
 
-    def __init__(self, register):
+    def __init__(self, register, notify):
         logger.info("Init IAX2")
         self.register = register
+        self.notify = notify
 
     def parse_packet(self, data, host):
         logger.debug(f"received {data} from {host}")
-        packet = iax2Packet(data, host, self.register, self.calls, self.nodes)
+        packet = iax2Packet(data, host, self)
         if packet.responseClass:
             # Since we have a responseClass, sending which ever response we're going to send
             return packet.build_response()
 
 
 class iax2Packet():
-    def __init__(self, data, host, register, calls, nodes):
+    def __init__(self, data, host, parent):
         start_time = current_milli_time()
-        self.register = register
-        self.calls = calls
-        self.nodes = nodes
+        self.parent = parent
 
         # F, Source Call Number -- 1, 15 Bits (16 Bits)
         # R, Destination Call Number -- 1, 15 Bits (16 Bits)
@@ -91,14 +90,14 @@ class iax2Packet():
         if self.frame == 0x06:  # IAX Frame Type
             # TODO: Probably wrap this in a Try for any packet types we don't support
             module = __import__(f"iax2.subclass.{SUBCLASS[sub]}", fromlist=[''])
-            parserResponse = getattr(module, SUBCLASS[sub])(data[length:], register=self.register.get_handler(), calls=self.call, nodes=self.nodes)
+            parserResponse = getattr(module, SUBCLASS[sub])(data[length:], parent=self.parent, calls=self.call)
 
             # Get what ever response the parser has set, this is a reference to the class of the response
             self.responseClass = parserResponse.get_response()
         return None
 
     def build_response(self):
-        response = self.responseClass(calls=self.call, nodes=self.nodes)
+        response = self.responseClass(calls=self.call, nodes=self.parent.nodes)
         if self.dest == 0:
             self.dest = randbits(14)
         fsource = response.fType << 15 | self.dest
@@ -110,6 +109,6 @@ class iax2Packet():
 
     def get_call(self, sourceCall):
         # We're probably a new call, so create a new call object
-        if sourceCall not in self.calls:
-            self.calls[sourceCall] = call(sourceCall)
-        return self.calls[sourceCall]
+        if sourceCall not in self.parent.calls:
+            self.parent.calls[sourceCall] = call(sourceCall)
+        return self.parent.calls[sourceCall]
