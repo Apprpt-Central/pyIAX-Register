@@ -52,7 +52,7 @@ class regreq(baseclass):
                 }
                 self.response = regack
                 if self.notify:
-                    self.notify.get_handler().notify()
+                    self.notify.get_handler().notify(user=self.parsedData['UserName'], host=host, port=port)
             else:
                 self.call.set_entry('Cause', self.register.Cause)
                 self.call.set_entry('CauseCode', self.register.CauseCode)

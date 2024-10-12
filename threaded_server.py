@@ -66,9 +66,12 @@ if __name__ == "__main__":
             if "help" in dir(module):
                 module.help(parser)
         for moduleName in notify.__all__:
-            module = importlib.import_module(f"notify.{moduleName}")
-            if "help" in dir(module):
-                module.help(parser)
+            try:
+                module = importlib.import_module(f"notify.{moduleName}")
+                if "help" in dir(module):
+                    module.help(parser)
+            except:
+                pass
 
         parser.parse_known_args()
         parser.print_help()
