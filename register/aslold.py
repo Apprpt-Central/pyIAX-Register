@@ -35,7 +35,7 @@ class Node(Base):
 class aslold(baseRegister):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        engine = create_engine(self.args.SQLALCHEMY_DB_URL, echo=False)
+        engine = create_engine(self.args.SQLALCHEMY_DB_URL, echo=False, pool_recycle=60 * 5, pool_pre_ping=True)
         session_factory = sessionmaker(bind=engine)
         self.Session = scoped_session(session_factory)
 
@@ -54,6 +54,7 @@ class registerHandler(register):
         self.host = host
         self.port = port
         data = self.session.query(Node).filter_by(name = user).all()
+        self.session.remove()
         if len(data) > 0:
             password = data[0].secret
             if md5(challenge.encode('utf-8') + password.encode('ascii')).hexdigest().lower() == secret.lower():

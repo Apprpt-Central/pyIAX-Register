@@ -45,8 +45,8 @@ class notifyHandler(notify):
         Entry.port = port
         Entry.ttl = 60
         Entry.server = "XXXXX"
-        logger.success(Entry)
-        logger.success(f"Authentication Success from {host}:{port} for user {user}")
+        logger.debug(Entry)
+        logger.success(f"Notification Success from {host}:{port} for user {user}")
         self.producer.produce(self.topic, key=str(Entry.node).encode(), value=Entry.SerializeToString())
         self.producer.flush()
 
