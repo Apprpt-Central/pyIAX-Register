@@ -1,3 +1,11 @@
+"""ASL-old registration backend using a SQLAlchemy connection.
+
+This module implements a backend that authenticates users from a
+legacy `user_Nodes` table. It exposes a `aslold` initializer that
+creates a scoped SQLAlchemy session and a `registerHandler` class with a
+`verify()` method used by the IAX2 parser.
+"""
+
 from hashlib import md5
 from register import register, baseRegister
 from sqlalchemy import create_engine
@@ -17,13 +25,18 @@ __maintainer__ = "Jason Kendall"
 __email__ = "ve3yca@ve3yca.com"
 __status__ = "Dev"
 
+
 verboselogs.install()
 logger = logging.getLogger(__name__)
+
 
 class Base(DeclarativeBase):
     pass
 
+
 class Node(Base):
+    """Minimal declarative model for the legacy `user_Nodes` table."""
+
     __tablename__ = "user_Nodes"
 
     Node_ID: Mapped[int] = mapped_column(primary_key=True)
@@ -31,7 +44,7 @@ class Node(Base):
     secret: Mapped[str]
 
 
-# Initializer, add any connections you need here as they initialize at startup
+# Initializer: create DB engine and scoped session factory
 class aslold(baseRegister):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,20 +53,26 @@ class aslold(baseRegister):
         self.Session = scoped_session(session_factory)
 
     def get_handler(self):
+        # return a handler that will be used per-request
         return registerHandler(self.Session)
 
 
-# Handlers are initialized at time of use,
+# Per-request handler that uses the provided session factory
 class registerHandler(register):
     def __init__(self, session, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.session = session
 
-    # hashed === md5(challenge+plaintext) -> success
     def verify(self, user, challenge, secret, method, host, port):
+        """Verify hashed challenge against stored secret.
+
+        The stored password is combined with the provided `challenge` and
+        hashed with MD5; the result is compared to the `secret` value
+        supplied by the client.
+        """
         self.host = host
         self.port = port
-        data = self.session.query(Node).filter_by(name = user).all()
+        data = self.session.query(Node).filter_by(name=user).all()
         self.session.remove()
         if len(data) > 0:
             password = data[0].secret

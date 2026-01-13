@@ -1,3 +1,10 @@
+"""Small helper to represent an ongoing IAX call/session.
+
+`call` stores arbitrary key/value entries that are used by parsers and
+response builders to maintain state across packets belonging to the
+same call number.
+"""
+
 __author__ = "Jason Kendall VE3YCA"
 __copyright__ = "Copyright 2020-2021, Jason Kendall"
 __credits__ = ["Jason Kendall"]
@@ -11,13 +18,12 @@ __status__ = "Dev"
 class call:
     def __init__(self, ID):
         self.id = ID
+        # simple dict to hold call-scoped state (host, timestamps, auth info, etc.)
         self.cache = {}
 
     def set_entry(self, key, value):
         self.cache[key] = value
 
     def get_entry(self, key):
-        if key in self.cache:
-            return self.cache[key]
-        else:
-            None
+        """Return stored entry or None if missing."""
+        return self.cache.get(key)

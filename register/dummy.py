@@ -1,3 +1,10 @@
+"""Dummy registration backend for testing.
+
+This backend accepts a single shared password (configured via
+`--password`) and verifies incoming challenges against it. Useful for
+local development when a real user store is not available.
+"""
+
 from hashlib import md5
 from register import register, baseRegister
 
@@ -18,8 +25,9 @@ verboselogs.install()
 logger = logging.getLogger(__name__)
 
 
-# Initializer, add any connections you need here as they initialize at startup
 class dummy(baseRegister):
+    """Initializer for dummy backend (no external resources)."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -27,13 +35,14 @@ class dummy(baseRegister):
         return registerHandler(args=self.args)
 
 
-# Handlers are initialized at time of use,
 class registerHandler(register):
+    """Per-request handler that validates using a configured password."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    # hashed === md5(challenge+plaintext) -> success
     def verify(self, user, challenge, secret, method, host, port):
+        """Check if `secret` matches md5(challenge + configured_password)."""
         self.host = host
         self.port = port
         password = self.args.REGISTER_PASSWORD

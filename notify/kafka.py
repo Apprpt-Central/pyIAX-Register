@@ -1,3 +1,10 @@
+"""Kafka notify backend to publish node updates as protobuf messages.
+
+This module provides a `kafka` initializer that creates a
+`confluent_kafka.Producer` and a `notifyHandler` which publishes a
+serialized `update` protobuf message each time `notify()` is called.
+"""
+
 from notify import notify, baseNotify
 from datetime import datetime
 from dns_pb2 import update
@@ -20,8 +27,9 @@ verboselogs.install()
 logger = logging.getLogger(__name__)
 
 
-# Initializer, add any connections you need here as they initialize at startup
 class kafka(baseNotify):
+    """Initializer that creates a confluent-kafka Producer instance."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.producer = Producer({'bootstrap.servers': self.args.NOTIFY_BOOTSTRAP})
@@ -30,14 +38,16 @@ class kafka(baseNotify):
         return notifyHandler(producer=self.producer, topic=self.args.NOTIFY_TOPIC)
 
 
-# Handlers are initialized at time of use,
 class notifyHandler(notify):
+    """Publish a protobuf `update` message to the configured Kafka topic."""
+
     def __init__(self, producer, topic, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.producer = producer
         self.topic = topic
 
     def notify(self, user, host, port, *args, **kwargs):
+        # Build protobuf update message from parameters
         Entry = update()
         Entry.timestamp.FromDatetime(datetime.now())
         Entry.node = int(user)
@@ -47,6 +57,7 @@ class notifyHandler(notify):
         Entry.server = "XXXXX"
         logger.debug(Entry)
         logger.success(f"Notification Success from {host}:{port} for user {user}")
+        # Produce the serialized message to Kafka and flush
         self.producer.produce(self.topic, key=str(Entry.node).encode(), value=Entry.SerializeToString())
         self.producer.flush()
 

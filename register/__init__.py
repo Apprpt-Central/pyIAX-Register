@@ -1,3 +1,12 @@
+"""Base classes and helpers for registration backends.
+
+Provides a small framework that registration backends extend. The
+`baseRegister` class is used for components that need access to parsed
+CLI args at initialization time. The `register` class supplies common
+helpers and properties used during verification (supply `host` and
+`port` on the handler instances before accessing IE helpers).
+"""
+
 from random import randint
 from iax2.helpers import IEDateTime, IEApparentAddr
 from os.path import dirname, basename, isfile, join
@@ -18,11 +27,20 @@ __all__ = [basename(f)[:-3] for f in modules if isfile(f) and not f.endswith('__
 
 
 class baseRegister():
+    """Simple initializer that stores parsed CLI args for initializers."""
+
     def __init__(self, *args, **kwargs):
         self.args = kwargs['args']
 
 
 class register():
+    """Base class for per-request handlers used by the IAX2 parser.
+
+    Subclasses should set `self.host` and `self.port` before accessing
+    `IEDateTime` or `IEApparentAddr` which derive IAX-specific IEs used
+    when building responses.
+    """
+
     CauseCode = 0x01
     Cause = "Error"
     RegRefresh = 120
@@ -36,10 +54,12 @@ class register():
 
     @property
     def Refresh(self):
+        # randomized refresh interval within configured bounds
         return randint(self.RegRefresh - self.RegRefreshSize, self.RegRefresh + self.RegRefreshSize)
 
     @property
     def IEDateTime(self):
+        # lazily construct IEDateTime helper when first requested
         if self._iedatetime is None:
             self._iedatetime = IEDateTime()
         return self._iedatetime.result
@@ -50,6 +70,7 @@ class register():
 
     @property
     def IEApparentAddr(self):
+        # lazily construct IEApparentAddr using host/port from the handler
         if self._ieapparentaddr is None:
             self._ieapparentaddr = IEApparentAddr(self.host, self.port)
         return self._ieapparentaddr.result

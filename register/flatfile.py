@@ -1,3 +1,10 @@
+"""Flatfile registration backend.
+
+Loads username/password pairs from a CSV file (default: `useraccess.csv`)
+and verifies incoming challenges against the stored plaintext password
+using the md5(challenge + password) scheme expected by the IAX client.
+"""
+
 from hashlib import md5
 from register import register, baseRegister
 from os import path
@@ -19,13 +26,15 @@ verboselogs.install()
 logger = logging.getLogger(__name__)
 
 
-# Initializer, add any connections you need here as they initialize at startup
 class flatfile(baseRegister):
+    """Initializer that loads accounts into memory at startup."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not path.exists(self.args.REGISTER_USERFILE):
             logger.error(f"User file {self.args.REGISTER_USERFILE} does not exist!")
             exit()
+        # Load CSV rows into a dict mapping username -> password
         with open(self.args.REGISTER_USERFILE, mode='r') as infile:
             accounts = csv.reader(infile)
             self.accounts = dict((rows[0], rows[1]) for rows in accounts)
@@ -34,14 +43,15 @@ class flatfile(baseRegister):
         return registerHandler(self.accounts)
 
 
-# Handlers are initialized at time of use,
 class registerHandler(register):
+    """Per-request handler verifying the provided challenge response."""
+
     def __init__(self, accounts, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.accounts = accounts
 
-    # hashed === md5(challenge+plaintext) -> success
     def verify(self, user, challenge, secret, method, host, port):
+        """Return True when the md5(challenge + password) matches `secret`."""
         self.host = host
         self.port = port
         if user in self.accounts:

@@ -1,3 +1,10 @@
+"""IAX2 packet parsing and response builder.
+
+This module decodes incoming IAX2 packet headers, dispatches payloads
+to subclass parsers (in `iax2.subclass`) and constructs response frames
+when requested by the subclass parser.
+"""
+
 from struct import unpack_from, pack
 from iax2.subclass import SUBCLASS
 from iax2.call import call
@@ -27,6 +34,7 @@ def current_milli_time():
 
 
 class iax2():
+    # shared caches for calls and known nodes
     calls = TTLCache(512, 120)
     nodes = TTLCache(10000, 120)
 
@@ -38,12 +46,14 @@ class iax2():
     def parse_packet(self, data, host):
         logger.debug(f"received {data} from {host}")
         packet = iax2Packet(data, host, self)
-        if packet.responseClass:
-            # Since we have a responseClass, sending which ever response we're going to send
+        # If subclass parser indicated a response class, build and return it
+        if getattr(packet, 'responseClass', None):
             return packet.build_response()
 
 
 class iax2Packet():
+    """Decode a single IAX2 packet and dispatch to subclass parsers."""
+
     def __init__(self, data, host, parent):
         start_time = current_milli_time()
         self.parent = parent
@@ -58,6 +68,7 @@ class iax2Packet():
         # Data - Variable
         fsource, rdest, self.time, self.oseq, self.iseq, self.frame, csub = unpack_from("!HHLBBBB", data, 0)
 
+        # Extract flags and 15-bit call numbers
         fFlag = fsource >> 15
         self.source = fsource & 0x7FFF
 
@@ -66,12 +77,14 @@ class iax2Packet():
 
         cFlag = csub >> 15
 
+        # Only full frames (FFlag == 1) are supported here
         if fFlag == 1:
             length = 0x0C
         else:
             logger.debug("Mini-Frame - Not Supported")
             return
 
+        # verify subclass flag
         if cFlag == 0:
             sub = csub & 0x7FFF
         else:
@@ -81,22 +94,24 @@ class iax2Packet():
         logger.debug(f"Source: {self.source}, rFlag: {rFlag}, Dest: {self.dest}, Time: {self.time}")
         logger.debug(f"OutSeq: {self.oseq}, InSeq: {self.iseq}, Frame: {self.frame}, SubClass: {sub}")
 
+        # Ensure we have a call object for the source call number
         self.call = self.get_call(self.source)
         if not self.call.get_entry("start_time"):
             self.call.set_entry("host", host)
             self.call.set_entry("start_time", start_time)
 
-        # Find and load the correct packet parser
+        # Find and load the correct packet parser for IAX frame type
         if self.frame == 0x06:  # IAX Frame Type
             # TODO: Probably wrap this in a Try for any packet types we don't support
             module = __import__(f"iax2.subclass.{SUBCLASS[sub]}", fromlist=[''])
             parserResponse = getattr(module, SUBCLASS[sub])(data[length:], parent=self.parent, calls=self.call)
 
-            # Get what ever response the parser has set, this is a reference to the class of the response
+            # Subclass parser returns an object exposing `get_response()`
             self.responseClass = parserResponse.get_response()
         return None
 
     def build_response(self):
+        # Instantiate the response class and assemble a full IAX header
         response = self.responseClass(calls=self.call, nodes=self.parent.nodes)
         if self.dest == 0:
             self.dest = randbits(14)
@@ -108,7 +123,7 @@ class iax2Packet():
         return header + response.get_response()
 
     def get_call(self, sourceCall):
-        # We're probably a new call, so create a new call object
+        # Return existing call object or create a new one stored in parent cache
         if sourceCall not in self.parent.calls:
             self.parent.calls[sourceCall] = call(sourceCall)
         return self.parent.calls[sourceCall]

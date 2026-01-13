@@ -1,3 +1,9 @@
+"""Dummy notify backend that logs notifications.
+
+Useful for development when you want to see notification events without
+publishing to Kafka or other external systems.
+"""
+
 from notify import notify, baseNotify
 
 import logging
@@ -17,8 +23,9 @@ verboselogs.install()
 logger = logging.getLogger(__name__)
 
 
-# Initializer, add any connections you need here as they initialize at startup
 class dummy(baseNotify):
+    """No-op initializer; returns a handler that logs notifications."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -26,16 +33,16 @@ class dummy(baseNotify):
         return notifyHandler(args=self.args)
 
 
-# Handlers are initialized at time of use,
 class notifyHandler(notify):
+    """Handler that emits a success-level log for notify events."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    # hashed === md5(challenge+plaintext) -> success
     def notify(self, *args, **kwargs):
+        # Log a simple event to indicate notification reached this handler
         logger.success("GOT IT")
-#        logger.success(f"Authentication Success from {host}:{port} for user {user}")
+
 
 def help(parser):
     group = parser.add_argument_group('Dummy Notify Module')
-#    group.add_argument('--password', dest='REGISTER_PASSWORD', default='password', help='The password to always accept (Default: password)')

@@ -1,24 +1,28 @@
+"""Helpers to build IAX Information Elements (IEs).
+
+Provides `IEDateTime` and `IEApparentAddr` helpers that produce the
+binary representation expected by the IAX protocol for timestamps and
+the apparent client address IE.
+"""
+
 from datetime import datetime, timezone
 from ipaddress import ip_address, IPv4Address, IPv6Address
 from struct import pack
 
 
 class IEDateTime:
-    """
-       Per the RFC:
-        The 5 least significant bits are seconds,
-        the next 6 least significant bits are minutes,
-        the next least significant 5 bits are hours,
-        the next least significant 5 bits are the day of the month,
-        the next least significant 4 bits are the month, 1-based index (i.e., January == 1, February == 2, etc.)
-        the most significant 7 bits are the year. The year is offset from 2000
-        The timezone of the clock MUST be UTC to avoid confusion between the peers
+    """Construct the packed IEDateTime value per IAX specification.
+
+    The resulting integer is formed by packing fields (seconds, minutes,
+    hours, day, month, year offset) into bitfields as defined by the
+    protocol. The input `TS` should be a timezone-aware datetime in UTC
+    (defaults to now UTC).
     """
 
     def __init__(self, TS=None):
         if TS is None:
             TS = datetime.now(timezone.utc)
-        # TODO: Check what TS is, it needs to be a DateTime object
+        # TODO: Validate TS is a datetime
         result = (TS.second >> 1) & 0x1f
         result = result | (TS.minute & 0x3f) << 5
         result = result | (TS.hour & 0x1f) << 11
@@ -29,12 +33,20 @@ class IEDateTime:
 
 
 class IEApparentAddr:
+    """Pack an apparent-address IE for IPv4 (IPv6 not implemented).
+
+    The format includes a family/type field, port and the packed IP
+    address. IPv6 support is not implemented in this helper.
+    """
 
     def __init__(self, address, port):
         ip = ip_address(address)
         if isinstance(ip, IPv4Address):
+            # pack family/type, port, 4-byte IPv4 address and padding
             self.result = pack("!HH4sxxxxxxxx", 0x0200, port, ip.packed)
         elif isinstance(ip, IPv6Address):
+            # TODO Not implementet yet for IPv6
+            # pack family/type, port, 16-byte IPv6 address
             # self.result = pack("!HH4s16s4s", 0x0A00, port, "FlowInfo", ip.packed, "ScopeID")
             raise
         else:

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""UDP-based IAX2 registration server entrypoint.
+
+This script sets up a threaded UDP server that parses IAX2 packets and
+delegates registration and notification handling to pluggable modules
+in the `register` and `notify` packages.
+"""
 
 from iax2.packet import iax2
 from verboselogs import VerboseLogger as getLogger
@@ -25,26 +31,43 @@ logger = getLogger('pyIAX-Regserver')
 
 
 class pyIAX(socketserver.BaseRequestHandler):
+    """Request handler that passes raw UDP data to the IAX2 parser.
+
+    The `self.request` attribute for UDP handlers is a (data, socket)
+    tuple; `self.client_address` is the (host, port) tuple of the sender.
+    """
+
     def handle(self):
         data = self.request[0]
         host = self.client_address
+        # Parse incoming packet and optionally get a response to send
         response = self.server.iax2.parse_packet(data, host)
         logger.debug(f"Response: {response}")
         if response:
+            # reply using the socket object in the request tuple
             self.request[1].sendto(response, host)
 
 
 class ThreadedUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
+    """UDP server that holds references to register/notify handlers.
+
+    The server stores the `iax2` parser instance on itself so request
+    handlers can call `self.server.iax2`.
+    """
+
     def __init__(self, *args, **kwargs):
 
+        # Pop pluggable components from kwargs and keep them on the server
         self.register = kwargs.pop('register')
         self.notify = kwargs.pop('notify')
         self.args = kwargs.pop('args')
 
+        # IAX2 parser requires register/notify handler objects
         self.iax2 = iax2(self.register, self.notify)
         socketserver.UDPServer.__init__(self, *args, **kwargs)
 
-if __name__ == "__main__":
+
+def main():
     parser = configargparse.ArgParser(
         default_config_files=['/etc/pyiax-reg/*.conf', './pyiax-reg.conf'],
         description='IAX2 Registration Server',
@@ -61,6 +84,7 @@ if __name__ == "__main__":
     args, argv = parser.parse_known_args()
 
     if args.HELP:
+        # If help requested, query modules for extra help and show it
         for moduleName in register.__all__:
             module = importlib.import_module(f"register.{moduleName}")
             if "help" in dir(module):
@@ -70,16 +94,16 @@ if __name__ == "__main__":
                 module = importlib.import_module(f"notify.{moduleName}")
                 if "help" in dir(module):
                     module.help(parser)
-            except:
+            except Exception:
                 pass
 
         parser.parse_known_args()
         parser.print_help()
-        exit()
+        return
 
     if args.REGISTER is None:
         print("Register Argument is not optional")
-        exit()
+        return
 
     # Configure logger for requested verbosity.
     if args.VERBOSE >= 3:
@@ -88,7 +112,7 @@ if __name__ == "__main__":
         logging_level = "VERBOSE"
     elif args.VERBOSE >= 1:
         logging_level = "NOTICE"
-    elif args.VERBOSE <= 0:
+    else:
         logging_level = "WARNING"
 
     if args.COLOR:
@@ -97,12 +121,14 @@ if __name__ == "__main__":
     else:
         logging.basicConfig(level=logging_level)
 
+    # Initialize the chosen register backend
     registerMod = importlib.import_module(f"register.{args.REGISTER}")
     if "help" in dir(registerMod):
         registerMod.help(parser)
         args, argv = parser.parse_known_args()
     registerHandler = getattr(registerMod, args.REGISTER)(args=args)
 
+    # Optionally initialize notify backend
     if args.NOTIFY:
         notifyMod = importlib.import_module(f"notify.{args.NOTIFY}")
         if "help" in dir(notifyMod):
@@ -125,4 +151,7 @@ if __name__ == "__main__":
     except (KeyboardInterrupt, SystemExit):
         server.shutdown()
         server.server_close()
-        exit()
+
+
+if __name__ == "__main__":
+    main()
